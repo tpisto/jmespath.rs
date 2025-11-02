@@ -61,6 +61,7 @@ impl Runtime {
         self.register_function("abs", Box::new(AbsFn::new()));
         self.register_function("avg", Box::new(AvgFn::new()));
         self.register_function("ceil", Box::new(CeilFn::new()));
+        self.register_function("coalesce", Box::new(CoalesceFn::new()));
         self.register_function("contains", Box::new(ContainsFn::new()));
         self.register_function("ends_with", Box::new(EndsWithFn::new()));
         self.register_function("floor", Box::new(FloorFn::new()));
@@ -73,11 +74,14 @@ impl Runtime {
         self.register_function("max_by", Box::new(MaxByFn::new()));
         self.register_function("min_by", Box::new(MinByFn::new()));
         self.register_function("merge", Box::new(MergeFn::new()));
+        self.register_function("merge_objects", Box::new(MergeObjectsFn::new()));
         self.register_function("not_null", Box::new(NotNullFn::new()));
         self.register_function("reverse", Box::new(ReverseFn::new()));
         self.register_function("sort", Box::new(SortFn::new()));
         self.register_function("sort_by", Box::new(SortByFn::new()));
         self.register_function("starts_with", Box::new(StartsWithFn::new()));
+        self.register_function("str_lower", Box::new(StrLowerFn::new()));
+        self.register_function("str_upper", Box::new(StrUpperFn::new()));
         self.register_function("sum", Box::new(SumFn::new()));
         self.register_function("to_array", Box::new(ToArrayFn::new()));
         self.register_function("to_number", Box::new(ToNumberFn::new()));

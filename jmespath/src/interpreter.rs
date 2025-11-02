@@ -137,8 +137,41 @@ pub fn interpret(data: &Rcvar, node: &Ast, ctx: &mut Context<'_>) -> SearchResul
             } else {
                 let mut collected = BTreeMap::new();
                 for kvp in elements {
+                    let key_str = match &kvp.key {
+                        crate::ast::KeyExpr::Static(s) => s.clone(),
+                        crate::ast::KeyExpr::Dynamic(expr) => {
+                            let key_result = interpret(data, expr, ctx)?;
+                            // Convert key result to string
+                            match &*key_result {
+                                Variable::String(s) => s.clone(),
+                                Variable::Number(n) => n.to_string(),
+                                Variable::Bool(b) => b.to_string(),
+                                Variable::Null => "null".to_string(),
+                                Variable::Array(_) | Variable::Object(_) | Variable::Expref(_) => {
+                                    return Err(JmespathError::new(
+                                        "",
+                                        0,
+                                        ErrorReason::Runtime(
+                                            crate::errors::RuntimeError::InvalidType {
+                                                expected: "string, number, or boolean".to_string(),
+                                                actual: match &*key_result {
+                                                    Variable::Array(_) => "array".to_string(),
+                                                    Variable::Object(_) => "object".to_string(),
+                                                    Variable::Expref(_) => {
+                                                        "expression reference".to_string()
+                                                    }
+                                                    _ => "unknown".to_string(),
+                                                },
+                                                position: 0,
+                                            },
+                                        ),
+                                    ));
+                                }
+                            }
+                        }
+                    };
                     let value = interpret(data, &kvp.value, ctx)?;
-                    collected.insert(kvp.key.clone(), value);
+                    collected.insert(key_str, value);
                 }
                 Ok(Rcvar::new(Variable::Object(collected)))
             }

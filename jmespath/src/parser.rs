@@ -253,14 +253,58 @@ impl<'a> Parser<'a> {
                 if self.peek(0) == &Token::Colon {
                     self.advance();
                     Ok(KeyValuePair {
-                        key: value,
+                        key: crate::ast::KeyExpr::Static(value),
                         value: self.expr(0)?,
                     })
                 } else {
                     Err(self.err(self.peek(0), "Expected ':' to follow key", true))
                 }
             }
-            ref t => Err(self.err(t, "Expected Field to start key value pair", false)),
+            Token::Lparen => {
+                // Parse dynamic key with parentheses: (expression): value
+                let key_expr = self.expr(0)?;
+                match self.advance() {
+                    Token::Rparen => {
+                        if self.peek(0) == &Token::Colon {
+                            self.advance();
+                            Ok(KeyValuePair {
+                                key: crate::ast::KeyExpr::Dynamic(key_expr),
+                                value: self.expr(0)?,
+                            })
+                        } else {
+                            Err(self.err(self.peek(0), "Expected ':' to follow dynamic key", true))
+                        }
+                    }
+                    ref t => {
+                        Err(self.err(t, "Expected ')' to close dynamic key expression", false))
+                    }
+                }
+            }
+            Token::Lbracket => {
+                // Parse dynamic key with brackets: [expression]: value
+                let key_expr = self.expr(0)?;
+                match self.advance() {
+                    Token::Rbracket => {
+                        if self.peek(0) == &Token::Colon {
+                            self.advance();
+                            Ok(KeyValuePair {
+                                key: crate::ast::KeyExpr::Dynamic(key_expr),
+                                value: self.expr(0)?,
+                            })
+                        } else {
+                            Err(self.err(self.peek(0), "Expected ':' to follow dynamic key", true))
+                        }
+                    }
+                    ref t => {
+                        Err(self.err(t, "Expected ']' to close dynamic key expression", false))
+                    }
+                }
+            }
+            ref t => Err(self.err(
+                t,
+                "Expected identifier, '(expression)', or '[expression]' to start key value pair",
+                false,
+            )),
         }
     }
 

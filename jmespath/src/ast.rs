@@ -176,11 +176,20 @@ impl fmt::Display for Ast {
     }
 }
 
+/// Represents the key in a KeyValuePair that can be either static or dynamic.
+#[derive(Clone, PartialEq, Debug)]
+pub enum KeyExpr {
+    /// Static key name (existing behavior)
+    Static(String),
+    /// Dynamic key computed from an expression
+    Dynamic(Ast),
+}
+
 /// Represents a key value pair in a MultiHash.
 #[derive(Clone, PartialEq, Debug)]
 pub struct KeyValuePair {
-    /// Key name.
-    pub key: String,
+    /// Key expression (static or dynamic).
+    pub key: KeyExpr,
     /// Value expression used to determine the value.
     pub value: Ast,
 }

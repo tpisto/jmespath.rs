@@ -631,6 +631,42 @@ impl Function for MergeFn {
     }
 }
 
+defn!(MergeObjectsFn, vec![arg!(array)], None);
+
+impl Function for MergeObjectsFn {
+    fn evaluate(&self, args: &[Rcvar], ctx: &mut Context<'_>) -> SearchResult {
+        self.signature.validate(args, ctx)?;
+        let array = args[0].as_array().ok_or_else(|| {
+            JmespathError::new(
+                "",
+                0,
+                ErrorReason::Runtime(RuntimeError::InvalidType {
+                    expected: "array".to_string(),
+                    actual: args[0].get_type().to_string(),
+                    position: 0,
+                }),
+            )
+        })?;
+
+        let mut result = BTreeMap::new();
+        for (index, item) in array.iter().enumerate() {
+            let object = item.as_object().ok_or_else(|| {
+                JmespathError::new(
+                    "",
+                    0,
+                    ErrorReason::Runtime(RuntimeError::InvalidType {
+                        expected: "object".to_string(),
+                        actual: item.get_type().to_string(),
+                        position: index,
+                    }),
+                )
+            })?;
+            result.extend(object.clone());
+        }
+        Ok(Rcvar::new(Variable::Object(result)))
+    }
+}
+
 defn!(NotNullFn, vec![arg!(any)], Some(arg!(any)));
 
 impl Function for NotNullFn {
@@ -852,6 +888,64 @@ impl Function for ToStringFn {
             Variable::String(_) => Ok(args[0].clone()),
             _ => Ok(Rcvar::new(Variable::String(args[0].to_string()))),
         }
+    }
+}
+
+defn!(StrLowerFn, vec![arg!(string)], None);
+
+impl Function for StrLowerFn {
+    fn evaluate(&self, args: &[Rcvar], ctx: &mut Context<'_>) -> SearchResult {
+        self.signature.validate(args, ctx)?;
+        let string = args[0].as_string().ok_or_else(|| {
+            JmespathError::new(
+                "",
+                0,
+                ErrorReason::Runtime(RuntimeError::InvalidType {
+                    expected: "string".to_string(),
+                    actual: args[0].get_type().to_string(),
+                    position: 0,
+                }),
+            )
+        })?;
+        Ok(Rcvar::new(Variable::String(string.to_lowercase())))
+    }
+}
+
+defn!(StrUpperFn, vec![arg!(string)], None);
+
+impl Function for StrUpperFn {
+    fn evaluate(&self, args: &[Rcvar], ctx: &mut Context<'_>) -> SearchResult {
+        self.signature.validate(args, ctx)?;
+        let string = args[0].as_string().ok_or_else(|| {
+            JmespathError::new(
+                "",
+                0,
+                ErrorReason::Runtime(RuntimeError::InvalidType {
+                    expected: "string".to_string(),
+                    actual: args[0].get_type().to_string(),
+                    position: 0,
+                }),
+            )
+        })?;
+        Ok(Rcvar::new(Variable::String(string.to_uppercase())))
+    }
+}
+
+defn!(CoalesceFn, vec![arg!(any)], Some(arg!(any)));
+
+impl Function for CoalesceFn {
+    fn evaluate(&self, args: &[Rcvar], ctx: &mut Context<'_>) -> SearchResult {
+        self.signature.validate(args, ctx)?;
+
+        // Return the first non-null value
+        for arg in args {
+            if !arg.is_null() {
+                return Ok(arg.clone());
+            }
+        }
+
+        // If all arguments are null, return null
+        Ok(Rcvar::new(Variable::Null))
     }
 }
 
